@@ -1,0 +1,65 @@
+# Movies Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: movies
+  labels:
+    name: movies
+    application: ticket-system
+spec:
+  # FIX: Removed headless service (clusterIP: None)
+  # Headless service caused unstable DNS resolution and no load balancing
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector:
+    application: ticket-system
+    name: movies
+---
+# Movies Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movies
+  labels:
+    name: movies
+    application: ticket-system
+spec:
+  selector:
+    matchLabels:
+      name: movies
+      application: ticket-system
+  strategy:
+    type: RollingUpdate
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: movies
+        application: ticket-system
+    spec:
+      containers:
+        - name: movies
+          image: docker.io/jackops93/movies:v1.0.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+          env:
+            - name: GUNICORN_CMD_ARGS
+              value: "--bind=0.0.0.0:5555"
+            - name: APP_PORT
+              value: "5555"
+            - name: APP_HOST
+              value: "0.0.0.0"
+          ports:
+            - name: http
+              containerPort: 5555
+

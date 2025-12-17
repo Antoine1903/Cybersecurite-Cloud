@@ -1,0 +1,69 @@
+# Tickets Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: tickets
+  labels:
+    name: tickets
+    application: ticket-system
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+    # FIX: HTTPS port removed
+    # Port 443 was exposed without TLS termination or certificates,
+    # creating a false sense of security and unstable client behavior
+  selector:
+    application: ticket-system
+    name: tickets
+---
+# Tickets Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tickets
+  labels:
+    name: tickets
+    application: ticket-system
+spec:
+  selector:
+    matchLabels:
+      name: tickets
+      application: ticket-system
+  strategy:
+    type: RollingUpdate
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: tickets
+        application: ticket-system
+    spec:
+      containers:
+        - name: tickets
+          image: docker.io/jackops93/tickets:v1.0.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+          env:
+            - name: GUNICORN_CMD_ARGS
+              value: "--bind=0.0.0.0:5000"
+            - name: APP_PORT
+              value: "5000"
+            - name: APP_HOST
+              value: "0.0.0.0"
+          ports:
+            - name: http
+              containerPort: 5000
+            # Container HTTPS port kept but not exposed via Service
+            - name: https
+              containerPort: 8443
+

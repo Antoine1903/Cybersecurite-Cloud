@@ -1,0 +1,61 @@
+# Ticket-UI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticket-ui
+  labels:
+    name: ticket-ui
+    application: ticket-system
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector:
+    name: ticket-ui
+    application: ticket-system
+---
+# Ticket-UI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-ui
+  labels:
+    name: ticket-ui
+    application: ticket-system
+spec:
+  selector:
+    matchLabels:
+      name: ticket-ui
+      application: ticket-system
+  strategy:
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: ticket-ui
+        application: ticket-system
+    spec:
+      containers:
+        - name: ticket-ui
+          image: docker.io/jackops93/ticket-ui:v1.0.1
+          imagePullPolicy: "Always"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+          env:
+            - name: BOOKING_SERVER_ENDPOINT
+              value: "http://tickets.default.svc.cluster.local"
+            - name: LOGIN_SERVER_ENDPOINT
+              value: "http://users.default.svc.cluster.local"
+            - name: MOVIE_SERVER_ENDPOINT
+              value: "http://movies.default.svc.cluster.local"
+          ports:
+            - name: http
+              containerPort: 3000

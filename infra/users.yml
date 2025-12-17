@@ -1,0 +1,66 @@
+# Users Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: users
+  labels:
+    name: users
+    application: ticket-system
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+      nodePort: 30036
+  selector:
+    name: users
+    application: ticket-system
+---
+# Users Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users
+  labels:
+    name: users
+    application: ticket-system
+spec:
+  selector:
+    matchLabels:
+      name: users
+      application: ticket-system
+  strategy:
+    type: RollingUpdate
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: users
+        application: ticket-system
+    spec:
+      containers:
+        - name: users
+          image: docker.io/jackops93/users:v1.0.1
+          imagePullPolicy: "Always"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+          env:
+            - name: GUNICORN_CMD_ARGS
+              value: "--bind=0.0.0.0:5000"
+            - name: APP_PORT
+              value: "5000"
+            - name: APP_HOST
+              value: "0.0.0.0"
+            - name: STUDENTS_DOMAIN
+              value: "cnam.fr"
+          ports:
+            - name: http
+              containerPort: 5000
+            - name: https
+              containerPort: 8443
