@@ -1,0 +1,32 @@
+apiVersion: security.kubesonde.io/v1
+kind: Kubesonde
+metadata:
+  name: online-boutique-connectivity
+  namespace: default
+spec:
+  namespace: default
+  probe: all
+  include:
+  - fromPodSelector: app=frontend
+    toPodSelector: app=checkoutservice
+    port: "5050"
+    protocol: TCP
+    expected: allow
+
+  - fromPodSelector: app=frontend
+    toPodSelector: app=redis-cart
+    port: "6379"
+    protocol: TCP
+    expected: deny
+
+  - fromPodSelector: app=cartservice
+    toPodSelector: app=redis-cart
+    port: "6379"
+    protocol: TCP
+    expected: allow
+
+  - fromPodSelector: app=cartservice
+    toPodSelector: app=paymentservice
+    port: "50051"
+    protocol: TCP
+    expected: deny
